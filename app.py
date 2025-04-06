@@ -31,9 +31,13 @@ def init_db():
 init_db()
 
 def get_db():
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect('users.db', timeout=20)
     conn.row_factory = sqlite3.Row
     return conn
+
+def close_db(conn):
+    if conn is not None:
+        conn.close()
 
 # Authentication middleware
 def login_required(f):
@@ -91,15 +95,22 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        db = get_db()
-        user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-        
-        if user and check_password_hash(user['password'], password):
-            session['user_id'] = user['id']
-            session['username'] = user['username']
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid username or password')
+        db = None
+        try:
+            db = get_db()
+            user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+            
+            if user and check_password_hash(user['password'], password):
+                session['user_id'] = user['id']
+                session['username'] = user['username']
+                return redirect(url_for('index'))
+            else:
+                flash('Invalid username or password')
+        except sqlite3.Error as e:
+            flash('Database error occurred. Please try again.')
+            print(f'Database error: {str(e)}')
+        finally:
+            close_db(db)
     
     return render_template('login.html')
 
@@ -110,15 +121,23 @@ def register():
         password = request.form['password']
         email = request.form['email']
         
-        db = get_db()
+        db = None
         try:
+            db = get_db()
             db.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
                       (username, generate_password_hash(password), email))
             db.commit()
             flash('Registration successful! Please login.')
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
+            db.rollback()
             flash('Username or email already exists')
+        except sqlite3.Error as e:
+            db.rollback()
+            flash('Database error occurred. Please try again.')
+            print(f'Database error: {str(e)}')
+        finally:
+            close_db(db)
     
     return render_template('register.html')
 
@@ -199,4 +218,4 @@ def analyze_data():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True)
