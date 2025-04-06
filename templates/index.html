@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Energy Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background-color: #2c3e50;
+            padding: 1rem 2rem;
+        }
+        .navbar-brand {
+            color: white !important;
+            font-weight: 600;
+        }
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .nav-link:hover {
+            color: white !important;
+        }
+        .main-container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            padding: 1.5rem;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        .btn-primary {
+            background-color: #2ecc71;
+            border: none;
+            padding: 0.5rem 1rem;
+        }
+        .btn-primary:hover {
+            background-color: #27ae60;
+        }
+        .btn-logout {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+        }
+        .btn-logout:hover {
+            background-color: #c0392b;
+            color: white;
+        }
+        .user-info {
+            color: white;
+            margin-right: 1rem;
+        }
+        .chart-container {
+            height: 400px;
+            margin-bottom: 2rem;
+        }
+        .suggestion-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #2ecc71;
+        }
+        .suggestion-card:last-child {
+            margin-bottom: 0;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        .loading-spinner i {
+            font-size: 2rem;
+            color: #2ecc71;
+        }
+        .device-list-container {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .suggestions-container {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .suggestions-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .suggestions-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .suggestions-container::-webkit-scrollbar-thumb {
+            background: #2ecc71;
+            border-radius: 3px;
+        }
+        .device-item {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .device-item:last-child {
+            margin-bottom: 0;
+        }
+        .device-info {
+            flex: 1;
+        }
+        .device-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .device-consumption {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .btn-delete {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .most-used-card {
+            margin-top: 1rem;
+            height: calc(100% - 1rem - 300px);
+            display: flex;
+            flex-direction: column;
+        }
+        .most-used-card .card-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        .most-used-card .card-body::-webkit-scrollbar {
+            width: 4px;
+        }
+        .most-used-card .card-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+        .most-used-card .card-body::-webkit-scrollbar-thumb {
+            background: #2ecc71;
+            border-radius: 2px;
+        }
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .add-device-card {
+            margin-bottom: 1rem;
+        }
+        .energy-consumption-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .energy-consumption-card .card-body {
+            flex: 1;
+        }
+        .lower-section {
+            margin-top: 2rem;
+        }
+        .device-rank {
+            width: 24px;
+            height: 24px;
+            background-color: #2ecc71;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .device-power {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .footer {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+        }
+        .footer a {
+            color: #2ecc71;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .heart {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Smart Energy Monitor</a>
+            <div class="d-flex align-items-center">
+                <span class="user-info">Welcome, {{ session.username }}</span>
+                <a href="{{ url_for('logout') }}" class="btn btn-logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card energy-consumption-card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Energy Consumption</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="consumptionChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="right-column">
+                    <div class="card add-device-card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Add Device</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="deviceForm">
+                                <div class="mb-3">
+                                    <label for="deviceName" class="form-label">Device Name</label>
+                                    <input type="text" class="form-control" id="deviceName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="powerConsumption" class="form-label">Power Consumption (kWh)</label>
+                                    <input type="number" class="form-control" id="powerConsumption" step="0.01" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Device</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card most-used-card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Most Used Devices</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="mostUsedDevices">
+                                <p class="text-muted">Add devices to see usage statistics.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row lower-section">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Device List</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="device-list-container" id="deviceList"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">AI Suggestions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="suggestions" class="suggestions-container">
+                            <p class="text-muted">Add some devices and click analyze for AI-powered suggestions.</p>
+                        </div>
+                        <div class="loading-spinner">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                            <p>Analyzing your energy usage...</p>
+                        </div>
+                        <button id="analyzeBtn" class="btn btn-primary mt-3" style="display: none;">
+                            <i class="bi bi-lightning-charge-fill"></i> Analyze
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p class="mb-0">Powered by <a href="https://gemini.google.com/" target="_blank">Gemini</a> <span class="heart">❤</span> Made with Love</p>
+        </div>
+    </footer>
+
+    <script>
+        let deviceData = [];
+        const deviceList = document.getElementById('deviceList');
+        const deviceForm = document.getElementById('deviceForm');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const suggestionsDiv = document.getElementById('suggestions');
+        const loadingSpinner = document.querySelector('.loading-spinner');
+
+        // Load sample data on page load
+        document.addEventListener('DOMContentLoaded', loadSampleData);
+
+        async function loadSampleData() {
+            try {
+                const response = await fetch('/api/sample-data');
+                if (response.ok) {
+                    deviceData = await response.json();
+                    updateDeviceList();
+                    updateCharts();
+                    analyzeBtn.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading sample data:', error);
+            }
+        }
+
+        deviceForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const deviceName = document.getElementById('deviceName').value;
+            const powerConsumption = parseFloat(document.getElementById('powerConsumption').value);
+            
+            deviceData.push({
+                device: deviceName,
+                power_consumption: powerConsumption,
+                timestamp: new Date().toISOString()
+            });
+            
+            updateDeviceList();
+            updateCharts();
+            analyzeBtn.style.display = 'block';
+            
+            deviceForm.reset();
+        });
+
+        function updateDeviceList() {
+            deviceList.innerHTML = '';
+            deviceData.forEach((device, index) => {
+                const deviceElement = document.createElement('div');
+                deviceElement.className = 'device-item';
+                deviceElement.innerHTML = `
+                    <div class="device-info">
+                        <div class="device-name">${device.device}</div>
+                        <div class="device-consumption">${device.power_consumption} kWh</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm btn-delete" onclick="removeDevice(${index})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                `;
+                deviceList.appendChild(deviceElement);
+            });
+            updateMostUsedDevices();
+        }
+
+        function removeDevice(index) {
+            deviceData.splice(index, 1);
+            updateDeviceList();
+            updateCharts();
+            if (deviceData.length === 0) {
+                analyzeBtn.style.display = 'none';
+                suggestionsDiv.innerHTML = '<p class="text-muted">Add some devices and click analyze for AI-powered suggestions.</p>';
+            }
+        }
+
+        function updateCharts() {
+            // Update consumption chart
+            const consumptionData = deviceData.map(d => ({
+                x: new Date(d.timestamp),
+                y: d.power_consumption,
+                name: d.device
+            }));
+
+            const layout = {
+                title: 'Energy Consumption Over Time',
+                xaxis: { title: 'Time' },
+                yaxis: { title: 'Power Consumption (kWh)' }
+            };
+
+            Plotly.newPlot('consumptionChart', [{
+                x: consumptionData.map(d => d.x),
+                y: consumptionData.map(d => d.y),
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Consumption'
+            }], layout);
+        }
+
+        analyzeBtn.addEventListener('click', async function() {
+            if (deviceData.length === 0) {
+                suggestionsDiv.innerHTML = '<p class="text-danger">Please add some devices first.</p>';
+                return;
+            }
+
+            loadingSpinner.style.display = 'block';
+            suggestionsDiv.style.display = 'none';
+            analyzeBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ device_data: deviceData })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displaySuggestions(data);
+                } else {
+                    throw new Error('Analysis failed');
+                }
+            } catch (error) {
+                suggestionsDiv.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+            } finally {
+                loadingSpinner.style.display = 'none';
+                suggestionsDiv.style.display = 'block';
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        function displaySuggestions(data) {
+            const suggestionsContainer = document.getElementById('suggestions');
+            suggestionsContainer.innerHTML = `
+                <div class="mb-3">
+                    <h6>Analysis Results:</h6>
+                    <p>Total Consumption: ${data.analysis.total}</p>
+                    <p>Daily Average: ${data.analysis.daily}</p>
+                    <p>Peak Hour: ${data.analysis.peak}:00</p>
+                </div>
+                <h6>Energy Saving Tips:</h6>
+            `;
+
+            // Split suggestions into individual tips and create cards
+            const tips = data.suggestions.split('\n').filter(tip => tip.trim());
+            tips.forEach(tip => {
+                const card = document.createElement('div');
+                card.className = 'suggestion-card';
+                card.textContent = tip.trim();
+                suggestionsContainer.appendChild(card);
+            });
+        }
+
+        function updateMostUsedDevices() {
+            const mostUsedDiv = document.getElementById('mostUsedDevices');
+            
+            if (deviceData.length === 0) {
+                mostUsedDiv.innerHTML = '<p class="text-muted">Add devices to see usage statistics.</p>';
+                return;
+            }
+
+            // Group devices by name and sum their power consumption
+            const deviceTotals = {};
+            deviceData.forEach(device => {
+                if (!deviceTotals[device.device]) {
+                    deviceTotals[device.device] = 0;
+                }
+                deviceTotals[device.device] += device.power_consumption;
+            });
+
+            // Convert to array and sort by power consumption
+            const sortedDevices = Object.entries(deviceTotals)
+                .map(([name, power]) => ({ name, power }))
+                .sort((a, b) => b.power - a.power)
+                .slice(0, 3); // Get top 3
+
+            if (sortedDevices.length === 0) {
+                mostUsedDiv.innerHTML = '<p class="text-muted">Add devices to see usage statistics.</p>';
+                return;
+            }
+
+            mostUsedDiv.innerHTML = sortedDevices.map((device, index) => `
+                <div class="most-used-item">
+                    <div class="d-flex align-items-center">
+                        <div class="device-rank">${index + 1}</div>
+                        <div class="ms-2">${device.name}</div>
+                    </div>
+                    <div class="device-power">${device.power.toFixed(2)} kWh</div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html> 
