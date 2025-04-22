@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key
 
 # Configure Gemini API with hardcoded key
-genai.configure(api_key='AIzaSyD4OuyUUsUWEc1V6B4T3LEuUuNS8t0jtHE')
+genai.configure(api_key='AIzaSyCxEddIl0ORyTcMwhbVc4v1lTlzdFPaubo')
 model = genai.GenerativeModel('gemini-2.0-flash', generation_config={"temperature": 0.7})
 
 # Database initialization
